@@ -1,6 +1,6 @@
 {
-    "name": "eristemena/dialogflow-fulfillment-webhook-php",
-    "description": "Dialogflow Fulfillment Webhook v1 & v2",
+    "name": "tmdan/dialogflow-fulfillment-webhook-php",
+    "description": "Dialogflow Fulfillment Webhook v1 & v2 - modernize from eristemena/dialogflow-fulfillment-webhook-php",
     "keywords": [
         "Dialogflow",
         "api.ai",
@@ -22,6 +22,10 @@
         {
             "name": "Eris Ristemena",
             "email": "e.ristemena@gmail.com"
+        },
+        {
+            "name": "Muhammed Abdullayev",
+            "email": "mukhammed.ne@gmail.com"
         }
     ],
     "require-dev": {
