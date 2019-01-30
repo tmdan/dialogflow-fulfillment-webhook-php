@@ -491,15 +491,18 @@ class WebhookClient extends RichMessage
      *
      * @return array
      */
-    protected function renderV2()
+    public function renderV2()
     {
         $out = [];
 
         $messages = [];
+        $pay = [];
 
         foreach ($this->messages as $message) {
             if ($message instanceof Payload) {
-                $out['payload'] = $message->render();
+                $out['fulfillmentMessages'][0]['payload'] = $message->render();
+                $out['fulfillmentMessages'][0]['platform'] = $this->v2PlatformMap[$this->getRequestSource()];
+
             } else {
                 $messages[] = $message->render();
             }
