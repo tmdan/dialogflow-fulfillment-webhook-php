@@ -301,7 +301,21 @@ class WebhookClient extends RichMessage
                 ->setRequestSource($this->requestSource);
 
             $this->messages[] = $message;
-        } elseif ($message instanceof Conversation) {
+        }
+        elseif (is_array($message) && $message[0] instanceof RichMessage) {
+
+            for($i=0;$i<count($message);$i++){
+                if($message[$i] instanceof RichMessage){
+                    $message[$i]->setAgentVersion($this->agentVersion)
+                        ->setRequestSource($this->requestSource);
+                    $this->messages[] = $message[$i];
+                }else{
+                    throw new \BadMethodCallException("Element in array - [$message[$i]] by index [$i]  does not instance of RichMessage type.");
+                }
+
+            }
+        }
+        elseif ($message instanceof Conversation) {
             $this->messages[] = Payload::create($message->render())
                 ->setAgentVersion($this->agentVersion)
                 ->setRequestSource($this->requestSource);
