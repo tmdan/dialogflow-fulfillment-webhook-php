@@ -440,6 +440,8 @@ class WebhookClient extends RichMessage
         return $this;
     }
 
+    
+    
     /**
      * Get Actions on Google DialogflowConversation object.
      *
@@ -481,6 +483,9 @@ class WebhookClient extends RichMessage
 
         $outgoingContexts = [];
         foreach ($this->outgoingContexts as $outgoingContext) {
+
+            $outgoingContext=new Context($outgoingContext);
+
             $outContexts = ['name' => $outgoingContext->getName()];
 
             if ($outgoingContext->getLifespan()) {
@@ -532,6 +537,9 @@ class WebhookClient extends RichMessage
 
         $outgoingContexts = [];
         foreach ($this->outgoingContexts as $outgoingContext) {
+
+            $outgoingContext=new Context($outgoingContext);
+
             $outContexts = [
                 'name' => $this->session.'/contexts/'.$outgoingContext->getName(),
             ];
