@@ -75,48 +75,50 @@ class WebhookClient extends RichMessage
         return new self($data);
     }
 
-    private function parseRequestV1($data)
-    {
-        $this->agentVersion = 1;
+//    private function parseRequestV1($data)
+//    {
+//        $this->agentVersion = 1;
+//
+//        $this->intent = $data['result']['metadata']['intentName'];
+//        $this->action = (isset($data['result']['action'])) ? $data['result']['action'] : null;
+//        $this->session = $data['sessionId'];
+//        $this->parameters = $data['result']['parameters'];
+//
+//        if (isset($data['result']['contexts'])) {
+//            $this->contexts = [];
+//            foreach ($data['result']['contexts'] as $arrContext) {
+//                $this->contexts[] = new Context($arrContext['name'], $arrContext['lifespan'], $arrContext['parameters']);
+//            }
+//        }
+//
+//        if (isset($data['originalRequest'])) {
+//            $originalRequest = $data['originalRequest'];
+//
+//            if (isset($originalRequest['data'])) {
+//                // Rename 'data' attr to 'payload' to be consistent with v2
+//                if (isset($originalRequest['data'])) {
+//                    $originalRequest['payload'] = $originalRequest['data'];
+//                    unset($originalRequest['data']);
+//                }
+//                $this->originalRequest = $originalRequest;
+//            }
+//
+//            if (isset($originalRequest['source'])) {
+//                $this->requestSource = $originalRequest['source'];
+//            } elseif (isset($originalRequest['payload']['source'])) {
+//                $this->requestSource = $originalRequest['data']['source'];
+//            }
+//        }
+//
+//        if (! $this->requestSource && isset($data['result']['source'])) {
+//            $this->requestSource = $data['result']['source'];
+//        }
+//
+//        $this->query = $data['result']['resolvedQuery'];
+//        $this->locale = $data['lang'];
+//    }
 
-        $this->intent = $data['result']['metadata']['intentName'];
-        $this->action = (isset($data['result']['action'])) ? $data['result']['action'] : null;
-        $this->session = $data['sessionId'];
-        $this->parameters = $data['result']['parameters'];
 
-        if (isset($data['result']['contexts'])) {
-            $this->contexts = [];
-            foreach ($data['result']['contexts'] as $arrContext) {
-                $this->contexts[] = new Context($arrContext['name'], $arrContext['lifespan'], $arrContext['parameters']);
-            }
-        }
-
-        if (isset($data['originalRequest'])) {
-            $originalRequest = $data['originalRequest'];
-
-            if (isset($originalRequest['data'])) {
-                // Rename 'data' attr to 'payload' to be consistent with v2
-                if (isset($originalRequest['data'])) {
-                    $originalRequest['payload'] = $originalRequest['data'];
-                    unset($originalRequest['data']);
-                }
-                $this->originalRequest = $originalRequest;
-            }
-
-            if (isset($originalRequest['source'])) {
-                $this->requestSource = $originalRequest['source'];
-            } elseif (isset($originalRequest['payload']['source'])) {
-                $this->requestSource = $originalRequest['data']['source'];
-            }
-        }
-
-        if (! $this->requestSource && isset($data['result']['source'])) {
-            $this->requestSource = $data['result']['source'];
-        }
-
-        $this->query = $data['result']['resolvedQuery'];
-        $this->locale = $data['lang'];
-    }
 
     private function parseRequestV2($data)
     {
@@ -151,6 +153,10 @@ class WebhookClient extends RichMessage
         $this->locale = $data['queryResult']['languageCode'];
     }
 
+
+
+
+    
     /**
      * The agent version (v1 or v2) based on Dialogflow webhook request.
      * Reference: https://dialogflow.com/docs/reference/v2-comparison.
@@ -362,16 +368,22 @@ class WebhookClient extends RichMessage
      */
     public function setOutgoingContext($context)
     {
+        $lifespan = 1;
+        $parameters = [];
+
+
         if (is_string($context)) {
-            $outgoingContext = new Context($context);
-        } elseif (is_array($context)) {
+            $outgoingContext = new Context($context, $lifespan, $parameters);
+        }
+        elseif (is_array($context))
+        {
             if (! isset($context['name'])) {
                 throw new RuntimeException('Context must have a name');
             }
 
             $name = $context['name'];
 
-            $lifespan = 1;
+
             if (isset($context['lifespan'])) {
                 $lifespan = is_numeric($context['lifespan']) ? $context['lifespan'] : null;
             }
@@ -382,9 +394,12 @@ class WebhookClient extends RichMessage
             }
 
             $outgoingContext = new Context($name, $lifespan, $parameters);
-        } elseif ($context instanceof Context) {
+        }
+        elseif ($context instanceof Context)
+        {
             $outgoingContext = $context;
-        } else {
+        }
+        else {
             throw new RuntimeException('Context must be provided');
         }
 
@@ -435,7 +450,22 @@ class WebhookClient extends RichMessage
      */
     public function setOutgoingContexts($contexts)
     {
-        $this->outgoingContexts = $contexts;
+        $outgoingContexts=[];
+        
+
+        if(is_array($contexts)) {
+
+            foreach ($contexts as $context)
+            {
+                $this->setOutgoingContext($context);
+            }
+
+        }
+        else{
+            throw new \BadMethodCallException("Аргумент должен быть массивом");
+        }
+        
+        //$this->outgoingContexts = $contexts;
 
         return $this;
     }
@@ -461,47 +491,47 @@ class WebhookClient extends RichMessage
      *
      * @return array
      */
-    protected function renderV1()
-    {
-        $out = ['messages' => []];
-
-        $messages = [];
-
-        foreach ($this->messages as $message) {
-            if ($message instanceof Payload) {
-                $out['data'] = $message->render();
-            } else {
-                $messages[] = $message->render();
-            }
-        }
-
-        $out['messages'] = $messages;
-
-        if ($this->text) {
-            $out['speech'] = $this->text;
-        }
-
-        $outgoingContexts = [];
-        foreach ($this->outgoingContexts as $outgoingContext) {
-
-            $outgoingContext=new Context($outgoingContext);
-
-            $outContexts = ['name' => $outgoingContext->getName()];
-
-            if ($outgoingContext->getLifespan()) {
-                $outContexts['lifespan'] = $outgoingContext->getLifespan();
-            }
-
-            if ($outgoingContext->getParameters()) {
-                $outContexts['parameters'] = $outgoingContext->getParameters();
-            }
-
-            $outgoingContexts[] = $outContexts;
-        }
-        $out['contextOut'] = $outgoingContexts;
-
-        return $out;
-    }
+//    protected function renderV1()
+//    {
+//        $out = ['messages' => []];
+//
+//        $messages = [];
+//
+//        foreach ($this->messages as $message) {
+//            if ($message instanceof Payload) {
+//                $out['data'] = $message->render();
+//            } else {
+//                $messages[] = $message->render();
+//            }
+//        }
+//
+//        $out['messages'] = $messages;
+//
+//        if ($this->text) {
+//            $out['speech'] = $this->text;
+//        }
+//
+//        $outgoingContexts = [];
+//        foreach ($this->outgoingContexts as $outgoingContext) {
+//
+//            $outgoingContext=new Context($outgoingContext);
+//
+//            $outContexts = ['name' => $outgoingContext->getName()];
+//
+//            if ($outgoingContext->getLifespan()) {
+//                $outContexts['lifespan'] = $outgoingContext->getLifespan();
+//            }
+//
+//            if ($outgoingContext->getParameters()) {
+//                $outContexts['parameters'] = $outgoingContext->getParameters();
+//            }
+//
+//            $outgoingContexts[] = $outContexts;
+//        }
+//        $out['contextOut'] = $outgoingContexts;
+//
+//        return $out;
+//    }
 
     /**
      * Render response as array for API V2.
@@ -538,7 +568,7 @@ class WebhookClient extends RichMessage
         $outgoingContexts = [];
         foreach ($this->outgoingContexts as $outgoingContext) {
 
-            $outgoingContext=new Context($outgoingContext);
+            //new Context($outgoingContext);
 
             $outContexts = [
                 'name' => $this->session.'/contexts/'.$outgoingContext->getName(),
