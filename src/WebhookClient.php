@@ -308,7 +308,7 @@ class WebhookClient extends RichMessage
 
             $this->messages[] = $message;
         }
-        elseif (is_array($message) && $message[0] instanceof RichMessage) {
+        elseif (is_array($message) && isset($message[0]) && $message[0] instanceof RichMessage) {
 
             for($i=0;$i<count($message);$i++){
                 if($message[$i] instanceof RichMessage){
